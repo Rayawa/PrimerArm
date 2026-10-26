@@ -1,0 +1,513 @@
+华为“智能基座”系列课程
+手把手教你搭建Orange Pi AI Pro开发环境
+版本：1.1
+华为技术有限公司
+··
+版权所有 © 华为技术有限公司 2024。 保留一切权利。
+非经本公司书面许可，任何单位和个人不得擅自摘抄、复制本文档内容的部分或全部，并不得以任何形式传播。
+商标声明
+ 和其他华为商标均为华为技术有限公司的商标。
+本文档提及的其他所有商标或注册商标，由各自的所有人拥有。
+注意
+您购买的产品、服务或特性等应受华为公司商业合同和条款的约束，本文档中描述的全部或部分产品、服务或特性可能不在您的购买或使用范围之内。除非合同另有约定，华为公司对本文档内容不做任何明示或暗示的声明或保证。
+由于产品版本升级或其他原因，本文档内容会不定期进行更新。除非另有约定，本文档仅作为使用指导，本文档中的所有陈述、信息和建议不构成任何明示或暗示的担保。
+华为技术有限公司
+地址：
+深圳市龙岗区坂田华为总部办公楼     邮编：518129
+网址：
+http://e.huawei.com
+目录
+1 引言5
+1.1 Orange Pi AI Pro产品简介5
+1.2 CANN 简介5
+1.3 MindSpore简介7
+2 Orange Pi AI Pro开发环境搭建9
+2.1 准备配件9
+2.2 镜像烧录（在Windows系统内执行）10
+2.2.1 制卡前准备10
+2.2.2 下载Ubuntu镜像10
+2.2.3 下载balenaEtcher制卡工具12
+2.2.4 选择和烧录镜像13
+2.3 连接并登录香橙派AI Pro16
+2.3.1 插入TF卡16
+2.3.2 独立主机连接17
+2.3.3 串口连接21
+2.3.4 网线直连方式（推荐）24
+2.4 开发板网络连接30
+2.4.1 独立主机的WIFI连接30
+2.4.2 串口和网线的WIFI连接32
+2.4.3 通过PC共享网络联网（Windows）36
+2.4.4 通过路由器联网38
+2.5 升级ACLLite工具38
+2.5.1 安装ffmpeg39
+2.5.2 升级ACLLite39
+2.6 Swap内存扩容40
+2.7 测试并升级MindSpore41
+2.7.1 测试MindSpore41
+2.7.2 升级MindSpore41
+2.8 CANN包升级（算子开发专用）41
+2.9 执行算子样例(算子开发专用)43
+2.10 本章小结43
+引言
+Orange Pi AI Pro产品简介
+Orange Pi AI Pro 开发板是香橙派联合华为精心打造的高性能 AI 开发板，其搭载了昇腾 AI 处理器，可提供 8TOPS INT8 的计算能力，内存提供了8GB和16GB两种版本。可以实现图像、视频等多种数据分析与推理计算，可广泛用于教育、机器人、无人机等场景。开发者套件外观如图1-1所示。
+Orange Pi AI Pro 
+CANN 简介
+异构计算架构CANN（Compute Architecture for Neural Networks）是华为针对AI场景推出的异构计算架构，向上支持多种AI框架，包括MindSpore、PyTorch、TensorFlow等，向下服务AI处理器与编程，发挥承上启下的关键作用，是提升昇腾AI处理器计算效率的关键平台。同时针对多样化应用场景，提供多层次编程接口，支持用户快速构建基于昇腾平台的AI应用和业务。
+CANN逻辑架构：
+昇腾计算语言（Ascend Computing Language，简称AscendCL）：AscendCL接口是昇腾计算开放编程框架，是对底层昇腾计算服务接口的封装。它提供设备（Device）管理、上下文（Context）管理、流（Stream）管理、内存管理、模型加载与执行、算子加载与执行、媒体数据处理、图（Graph）管理等API库，供用户开发人工智能应用。
+昇腾计算服务层（Ascend Computing Service Layer）： 主要提供昇腾算子库AOL（Ascend Operator Library），通用神经网络（Neural Network，NN）库、线性代数计算库（Basic Linear Algebra Subprograms，BLAS）等高性能算子加速计算；昇腾调优引擎AOE（Ascend Optimization Engine），通过算子调优OPAT、子图调优SGAT、梯度调优GDAT、模型压缩AMCT提升模型端到端运行速度。同时提供AI框架适配器Framework Adaptor用于兼容TensorFlow、PyTorch等主流AI框架。
+昇腾计算编译层（Ascend Computing Compilation Layer）：昇腾计算编译层通过图编译器（Graph Compiler）将用户输入中间表达（Intermediate Representation，IR）的计算图编译成昇腾硬件可执行模型；同时借助张量加速引擎TBE（Tensor Boost Engine）的自动调度机制，高效编译算子。
+昇腾计算执行层（Ascend Computing Execution Layer）：负责模型和算子的执行，提供运行时库（Runtime）、图执行器（Graph Executor）、数字视觉预处理（Digital Vision Pre-Processing，DVPP）、人工智能预处理（Artificial Intelligence Pre-Processing，AIPP）、华为集合通信库（Huawei Collective Communication Library，HCCL）等功能单元。
+昇腾计算基础层（Ascend Computing Base Layer）：主要为其上各层提供基础服务，如共享虚拟内存（Shared Virtual Memory，SVM）、设备虚拟化（Virtual Machine，VM）、主机-设备通信（Host Device Communication，HDC）等。
+MindSpore简介
+昇思MindSpore是一个全场景深度学习框架，旨在实现易开发、高效执行、全场景统一部署三大目标。
+其中，易开发表现为API友好、调试难度低；高效执行包括计算效率、数据预处理效率和分布式训练效率；全场景则指框架同时支持云、边缘以及端侧场景。
+昇思MindSpore总体架构如下图所示：
+ModelZoo（模型库）：ModelZoo提供可用的深度学习算法网络，也欢迎更多开发者贡献新的网络(ModelZoo地址)。
+MindSpore Extend（扩展库）：昇思MindSpore的领域扩展库，支持拓展新领域场景，如GNN/深度概率编程/强化学习等，期待更多开发者来一起贡献和构建。
+MindSpore Science（科学计算）：MindScience是基于昇思MindSpore融合架构打造的科学计算行业套件，包含了业界领先的数据集、基础模型、预置高精度模型和前后处理工具，加速了科学行业应用开发。
+MindExpression（全场景统一API）：基于Python的前端表达与编程接口，支持两个融合（函数/OOP编程范式融合、AI+数值计算表达融合）以及两个统一（动静表达统一、单机分布式表达统一）。
+第三方前端：支持第三方多语言前端表达，未来计划陆续提供C/C++等第三方前端的对接工作，引入更多的第三方生态。
+MindSpore Data（数据处理层）：提供高效的数据处理、常用数据集加载等功能和编程接口，支持用户灵活地定义处理注册和pipeline并行优化。
+MindCompiler（AI编译器）：图层的核心编译器，主要基于端云统一的MindIR实现三大功能，包括硬件无关的优化（类型推导、自动微分、表达式化简等）、硬件相关优化（自动并行、内存优化、图算融合、流水线执行等）、部署推理相关的优化（量化、剪枝等）。
+MindRT（全场景运行时）：昇思MindSpore的运行时系统，包含云侧主机侧运行时系统、端侧以及更小IoT的轻量化运行时系统。
+MindSpore Insight（可视化调试调优工具）：昇思MindSpore的可视化调试调优工具，能够可视化地查看训练过程、优化模型性能、调试精度问题、解释推理结果（了解更多)。
+MindSpore Armour（安全增强库）：面向企业级运用时，安全与隐私保护相关增强功能，如对抗鲁棒性、模型安全测试、差分隐私训练、隐私泄露风险评估、数据漂移检测等技术（了解更多）。
+Orange Pi AI Pro开发环境搭建
+准备配件
+准备好开发板以及如下配件：
+配件名称
+描述
+推荐型号
+香橙派AI Pro
+香橙派AI Pro主板，或包含电源（64W）、散热组件、AI Pro金属外壳等。
+Orange Pi AI Pro主板： 
+8TOPS算力，16GBLPDDR4X
+Micro SD卡（TF卡）
+Micro SD卡（TF卡）用于装载镜像运行开发板。
+推荐使用SD 3.0接口标准的Micro SD卡，容量推荐不小于64GB。
+读卡器
+用于插入Micro SD卡烧录镜像
+需使用支持Micro SD卡的读卡器。读卡器的接口可以根据PC接口配置选择USB或Type-C接口。
+PC（笔记本或台式机）
+用于安装制卡工具、烧录镜像。
+操作系统：Windows 10、Windows 11。
+显示器、鼠标、键盘、HDMI连接线（可选）
+以独立主机的方式连接和控制开发板，显示桌面版系统
+显示器支持HDMI输入，鼠标、键盘支持USB连接
+MicroUSB连接线（可选）
+以串口的方式连接开发板和PC
+非SSH登录，部分操作受限
+网线（推荐）
+用于连接开发板和PC、或开发板连接网络
+RJ45网线
+硬件配置表
+镜像烧录（在Windows系统内执行）
+镜像烧录可以在Windows系统内执行，使用相应版本的balenaEtcher工具，快速烧录镜像至您的Micro SD卡。
+制卡前准备
+将Micro SD卡插入读卡器，并将读卡器插入PC
+插读卡器
+下载Ubuntu镜像
+点击此链接进入镜像下载页面
+点击图片中箭头图标跳转百度网盘下载页面
+选择Ubuntu镜像
+选择桌面版本下载，建议下载0318版本环境
+选择0318版本镜像
+备选下载方式
+如果百度网盘下载过慢，可以使用以下链接直接下载opiaipro_ubuntu22.04_desktop_aarch64_20240318的镜像：
+https://obs-9be7.obs.cn-east-2.myhuaweicloud.com/OrangePi/20240318/opiaipro_ubuntu22.04_desktop_aarch64_20240318.img.xz 
+下载制卡工具
+有两种制卡工具balenaEtcher、rufus，可根据自己电脑情况任选一种工具进行烧录。
+balenaEtcher制卡工具
+下载balenaEtcher
+点击此链接可跳转到软件官网，点击绿色的下载按钮会跳到软件下载的地方。
+下载balenaEtcher
+选择下载 Portable版本
+Portable版本无需安装，双击打开即可使用。
+选择Portable版本
+备选下载方式
+如果官方网站下载过慢，可以使用以下链接直接下载balenaEtcher-Setup-1.18.4软件：
+https://obs-9be7.obs.cn-east-2.myhuaweicloud.com/OrangePi/balenaEtcher/balenaEtcher-Setup-1.18.4.exe 
+打开balenaEtcher 
+balenaEtcher 界面
+报错解决
+Rufus制卡工具
+点击链接，进行下载、安装。
+选择和烧录镜像
+这里介绍balenaEtcher、rufus两种制卡工具烧录镜像，您可按对应工具进行烧录。
+balenaEtcher烧录镜像
+选择镜像、TF卡，启动烧录
+1.选择要烧录的镜像文件（2.2.2下载Ubuntu镜像的保存路径），2.选择TF卡的盘符，3.点击开始烧录，如下图：
+开始烧录
+烧录和验证大概需要20分钟左右，请耐心等待：
+烧录中
+验证中
+烧录完成
+烧录完成后，balenaEtcher的显示界面如下图所示，如果显示绿色的指示图标说明镜像烧录成功，此时就可以退出balenaEtcher，拔出TF卡，插入到开发板的TF卡槽中使用：
+烧录完成
+Rufus烧录镜像
+选择镜像、TF卡，烧录镜像
+sd卡插入读卡器，读卡器插入电脑、选择镜像与sd卡，点击“开始”
+烧录
+烧录完成
+等待结束后直接拔出读卡器
+烧录完成
+连接并登录香橙派AI Pro
+香橙派有多种连接工作模式，主要为独立主机、串口连接、SSH网络连接三种。其中SSH网络连接又分为网线直连、WIFI-路由器和网线-路由器三种使用方式。
+用户可根据实际情况自主选择连接方式：
+连接方式
+连接方式细分
+依赖配件
+备注
+独立主机
+独立主机
+显示器、鼠标、键盘
+显示器支持HDMI
+串口连接
+串口连接
+电脑，MicroUSB线
+非SSH登录，部分操作受限
+SSH网络连接
+网线直连方式（推荐）
+电脑，网线，MicroUSB线
+SSH登录
+WIFI-路由器方式
+电脑，无线路由器，MicroUSB线
+SSH登录
+网线-路由 器方式
+电脑，有线路由器，网线，MicroUSB线
+SSH登录
+本文重点介绍独立主机、串口连接、网线直连三种连接方式，更多连接方式请参考：
+https://www.hiascend.com/forum/thread-0231151118597227076-1-1.html 
+插入TF卡
+将开发板背面的2个拨码开关调整至“boot1：右边，boot2：右边”状态，如下图，该状态对应TF卡的启动设备：
+BOOT状态
+将烧录好镜像的 TF卡插入开发板对应的插槽中：
+插入TF卡
+独立主机连接
+本方式硬件连接如下所示：
+独立主机连接
+开发板连接显示器、鼠标、键盘
+将显示器连接到开发板的HDMI0接口，如下图：
+*注意：开发板有两个HDMI接口，目前只有HDMI0支持显示Linux系统的桌面，HDMI1显示Linux系统桌面的功能还需等软件更新。
+HDMI0接口位置
+通过开发板USB接口连接鼠标、键盘：
+连接HDMI、鼠标、键盘
+开发板连接电源
+连接20V PD-65W的Type C接口的电源，电源接口的位置如下图所示：
+Type C电源接口位置
+靠近关机按键的绿灯为电源指示灯，绿灯亮起代表开发板上电成功；MIPI LCD和CAMERA0 之间的绿灯为SATA硬盘的指示灯，绿灯亮起说明Linux内核启动成功：
+电源灯和系统等
+登录开发板
+接通电源后不久，显示器会显示登录页面。
+Linux 系统默认登录账号和密码：
+账号
+密码
+root
+Mind@123
+HwHiAiUser
+Mind@123
+Linux桌面系统的默认登录用户为HwHiAiUser，登录密码为Mind@123；目
+前没有打开root 用户登录的通道。
+输入密码
+成功登录后显示的 Linux系统桌面显示如下：
+登陆成功
+单击下方菜单栏的终端图标，或使用Ctrl+Alt+T快捷键，打开终端窗口，执行Linux命令：
+启动终端
+串口连接
+本方式硬件连接如下所示：
+串口连接方式
+使用Micro USB线连接开发板和PC
+插入Micro USB线连接后上电开发板
+下载并启动MobaXterm
+在PC机上，单击下载链接获取MobaXterm软件压缩包，解压获得“MobaXterm_Personal_22.2.exe”。
+双击“MobaXterm_Personal_22.2.exe”，启动MobaXterm。 
+设置串口连接
+打开左上角的“Session”设置，选择“Serial”串口连接，在“Serial port”中打开下拉框选择“COM3  (USB-Enhanced-SERIAL CH343 (COM3))”，波特率Speed（bps）填写“115200”，最后点击“OK”确认，如下图所示：
+设置串口连接
+*注意：若上一步无法找到串口，则需要在PC上安装USB转TTL串口芯片的驱动。驱动下载链接：https://obs-9be7.obs.cn-east-2.myhuaweicloud.com/OrangePi/private/CH343SER.EXE 下载完成后直接安装即可。
+输入账户名和密码
+进入远程登录界面后，按Enter键，输入用户名“HwHiAiUser”和登录密码“Mind@123”： 
+输入账号和密码登录
+*注意：MobaXterm的密码为暗文输入，不显示。
+登录成功
+串口方式登录开发板成功界面如下图所示：
+登录成功
+在重启开发板时，会弹出串口连接信息：
+重启时会显示串口信息
+可再次输入用户名“HwHiAiUser”和登录密码“Mind@123”登录。
+网线直连方式（推荐）
+本方式硬件连接如下所示：
+网线直连方式
+使用Micro USB和网线连接开发板和PC
+开发板同时插入Micro USB和网线，另一端连接PC，启动上电。
+插入Micro USB和网线后上电开发板
+根据2.3.3串口连接方式，登录开发板
+登陆成功
+在开发板中执行以下命令固定网口IP 
+密码：Mind@123
+(base) HwHiAiUser@orangepiaipro:~$ sudo nmcli con mod "Wired connection 1"  ipv4.addresses "192.168.137.100/22"  ipv4.gateway "192.168.137.1"  ipv4.dns "8.8.8.8"  ipv4.method "manual"
+配置PC虚拟IP地址
+在PC上打开“开始”，单击“设置”按钮，进入“Windows 设置”界面：
+Windows 设置
+选择“网络和Internet”，单击“更改适配器选项”：
+更改适配器选项
+出现已连接的“以太网x”就是开发板网线连接接口，如下图中的“以太网3”，选中后右键打开，点击“以太网x”的属性，：
+更改以太网x属性
+修改“Internet 协议版本 4（TCP/IPv4）”的属性，如下图：
+修改Internet 协议版本 4（TCP/IPv4）
+勾选“使用下面的 IP 地址”选项，填写IP地址（此处设置为192.168.137.101）和子网掩码，默认网关与DNS服务器地址为空，单击“确定”保存：
+填写IP地址和子网掩码
+使用快捷键“Win+R”，在运行窗口输入cmd进入命令行窗口。输入ipconfig命令查询PC网口IP地址是否修改成功：
+C:\Users\用户实际信息>ipconfig
+以太网适配器 以太网:
+   连接特定的 DNS 后缀 . . . . . . . :
+   本地链接 IPv6 地址. . . . . . . . : fe80::ca42:d397:f673:fad4%46
+   IPv4 地址 . . . . . . . . . . . . : 192.168.137.101
+   子网掩码  . . . . . . . . . . . . : 255.255.255.0
+   默认网关. . . . . . . . . . . . . :
+修改成功
+重启开发板
+在开发板中执行以下命令，重启开发板：
+sudo reboot
+使用MobaXtrem的ssh登录开发板
+远程登录IP为192.168.137.100，用户为HwHiAiUser，密码为Mind@123
+ssh登录开发板
+登陆成功
+网线直连登录开发板成功界面如下图所示：
+登陆成功
+开发板网络连接
+独立主机的WIFI连接
+点击桌面右上角的网络配置图标
+找到WIFI图标
+选择WIFI热点
+在弹出的下拉框中点击 More networks 可以看到所有扫描到的WIFI热点，然后选择想要连接的WIFI热点：
+选择WIFI
+输入WIFI密码
+输入WIFI热点的密码，再点击 Connect 就会开始连接WIFI。
+输入WIFI密码
+测试网络连接
+连接好 WIFI 后，可以打开浏览器查看是否能上网，浏览器的入口如下图所示：
+打开浏览器
+打开浏览器后如果能打开其他网页说明 WIFI 连接正常：
+测试网络连接
+串口和网线的WIFI连接
+连接前准备
+根据2.3.3 串口连接或2.3.4 网线直连方式登录开发板。
+扫描WIFI热点
+开发板上执行nmcli dev wifi 命令扫描周围的 WIFI 热点：
+nmcli dev wifi
+查询WIFI
+连接指定WIFI
+然后使用 nmcli 命令连接扫描到的 WIFI 热点，其中：
+a. wifi_name 需要换成想连接的 WIFI 热点的名字。
+b. wifi_passwd 需要换成想连接的 WIFI 热点的密码。
+(base) HwHiAiUser@orangepiaipro:~$ sudo nmcli dev wifi connect wifi_name password wifi_passwd
+输入密码“Mind@123”，连接成功后输出：
+Device 'wlan0' successfully activated with '09d38de4-88d7-440b-8f06-6809ba0951e7'.
+WIFI连接成功
+测试WIFI是否连通
+使用ping命令可以测试WIFI网络的连通性，ping命令可以通过Ctrl+C快捷键来中断运行。
+(base) HwHiAiUser@orangepiaipro:~$ ping www.orangepi.org -I wlan0
+输出：
+PING www.orangepi.org (123.57.147.237) from 192.168.43.182 wlan0: 56(84) bytes of data.
+64 bytes from 123.57.147.237 (123.57.147.237): icmp_seq=31 ttl=50 time=113 ms
+64 bytes from 123.57.147.237: icmp_seq=32 ttl=50 time=56.7 ms
+64 bytes from 123.57.147.237 (123.57.147.237): icmp_seq=33 ttl=50 time=58.0 ms
+64 bytes from 123.57.147.237 (123.57.147.237): icmp_seq=34 ttl=50 time=60.4 ms
+64 bytes from 123.57.147.237 (123.57.147.237): icmp_seq=35 ttl=50 time=53.3 ms
+^C64 bytes from 123.57.147.237: icmp_seq=36 ttl=50 time=61.1 ms
+--- www.orangepi.org ping statistics ---
+36 packets transmitted, 6 received, 83.3333% packet loss, time 52465ms
+rtt min/avg/max/mdev = 53.329/67.093/113.034/20.702 ms
+网络连接成功
+开发板配置自动登录
+可以在开发板中配置自动登录，root用户密码为Mind@123：
+su root
+vi /etc/systemd/system/getty.target.wants/getty\@tty1.service
+按i键进入编辑模式，将以下内容：
+ExecStart=-/sbin/agetty -o ‘-p -- \\u’ --noclear %I $TERM
+替换为：
+ExecStart=-/sbin/agetty --autologin HwHiAiUser --noclear %I $TERM
+之后按ecs键退出编辑模式，输入:wq保存并退出。
+修改内容
+至此，通过串口或网线的方式连接WIFI热点已完成。
+完成以上步骤之后，PC机还可以通过WIFI直接连接开发板，不需要借助串口线或网线。
+PC通过WIFI方式连接开发板（可选）
+PC连接相同WIFI
+PC机连接WIFI
+查看WIFI的IP地址
+通过 ip addr show wlan0 命令可以查看 wifi 的 IP 地址：
+(base) HwHiAiUser@orangepiaipro:~$ ip a s wlan0
+输出的WIFI IP为192.168.43.182：
+5: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 7c:88:99:ff:72:a6 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.43.182/24 brd 192.168.43.255 scope global dynamic noprefixroute wlan0
+       valid_lft 3460sec preferred_lft 3460sec
+    inet6 fe80::9436:1637:8e8a:94c8/64 scope link noprefixroute
+       valid_lft forever preferred_lft forever
+查看WIFI IP地址
+使用WIFI IP通过SSH登录开发板
+使用MobaXtrem的SSH和上一步获取到的WIFI IP地址登录开发板，用户为HwHiAiUser，密码为Mind@123：
+ssh登录开发板
+登陆成功后显示：
+登陆成功
+在此种模式下，PC机可以通过WIFI连接开发板，不需要借助串口和网线，但是WIFI网络连接不如硬件连接稳定，因此仅做参考。
+通过PC共享网络联网（Windows）
+PC通过RJ45网线直连开发板，在这种模式下，可以将PC的外部网络共享给开发板的网口来实现开发板联网，此方法不需要路由器，但是开发板的IP网段只支持配置192.168.137.xxx。 
+在PC上打开“开始”，单击“设置”按钮，进入“Windows 设置”界面
+Windows 设置
+选择“网络和Internet”，单击“更改适配器选项”
+更改适配器选项
+修改当前网络的共享状态
+右键当前网络链接图标，单击“属性”，以下图为例：
+选择网络
+进入“属性 > 共享 ”页面，勾选红框内选项，选择开发者套件的网络连接，单击“确定”：
+开启网络共享
+单击“确定”后，共享设置会强制修改PC网口IP地址为192.168.137.1，请点击“是”，如下图：
+IP地址变更
+登录开发板，执行以下命令验证是否成功共享网络
+ping www.hiascend.com
+显示以下内容表示开发板可连接网络，共享网络成功：
+网络连接成功
+ping 命令可以通过 Ctrl+C 快捷键来中断运行。
+通过路由器联网
+此方法需要准备路由器，但IP网段无限制。
+连接路由器
+先保持开发板关机状态，将网线的一端插入开发板的以太网接口，网线的另一端接入路由器，并确保网络是畅通的：
+以太网接口
+启动开发板，测试网络连接
+启动开发板，测试网络是否畅通，ping命令可通过 Ctrl+C 快捷键来中断运行：
+（base) HwHiAiUser@orangepiaipro:~$ ping www.huawei.com -I eth0
+ING www.a.shifen.com (183.2.172.185) from 192.168.2.100 eth0: 56(84) bytes of data. 64 bytes from 183.2.172.185 (183.2.172.185): icmp_seq=1 ttl=52 time=10.0 ms
+64 bytes from 183.2.172.185 (183.2.172.185): icmp_seq=2 ttl=52 time=9.77 ms
+64 bytes from 183.2.172.185 (183.2.172.185): icmp_seq=3 ttl=52 time=9.94 ms
+64 bytes from 183.2.172.185 (183.2.172.185): icmp_seq=4 ttl=52 time=9.94 ms ^C
+--- www.a.shifen.com ping statistics --- 4 packets transmitted, 4 received, 0% packet loss, time 3004ms
+rtt min/avg/max/mdev = 9.770/9.931/10.065/0.105 ms
+升级ACLLite工具
+ACLLite库是对CANN提供的ACL接口进行的高阶封装，简化用户调用流程，为用户提供一组简易的公共接口。当前主要针对边缘场景设计。
+ACLLite软件架构：
+命名空间
+模块
+说明
+API说明
+acllite
+common
+资源管理及公共函数模块
+common模块API说明
+DVPPLite
+DVPP高阶封装模块
+DVPPLite模块API说明
+OMExecute
+离线模型执行高阶封装模块
+OMExcute模块API说明
+Media
+媒体功能高阶封装模块
+Media模块API说明
+安装ffmpeg
+查询OS版本
+lsb_release -a
+系统版本为Ubuntu22.04
+apt安装
+Ubuntu 22.04及以上版本的用户建议使用apt安装，密码Mind@123：
+sudo apt-get install ffmpeg libavcodec-dev libswscale-dev libavdevice-dev
+升级ACLLite
+拉取ACLLite仓库，并进入目录
+git clone https://gitee.com/ascend/ACLLite.git
+cd ACLLite
+拉取ACLLite仓库
+安装
+编译过程中会将库文件安装到/lib目录下：
+# 设置环境变量，其中DDK_PATH中/usr/local请替换为实际CANN包的安装路径
+export DDK_PATH=/usr/local/Ascend/ascend-toolkit/latest
+export NPU_HOST_LIB=$DDK_PATH/runtime/lib64/stub
+bash build_so.sh
+安装成功：
+ACLLite安装成功
+设置默认的Python ACLlite目录：
+export CPU_ARCH=`arch`
+export THIRDPART_PATH=/usr/local/Ascend/thirdpart/${CPU_ARCH}  #代码编译时链接第三方库
+export PYTHONPATH=${THIRDPART_PATH}/acllite:$PYTHONPATH #设置pythonpath为固定目录
+Swap内存扩容（非必需）
+虽然开发板有8GB或16GB的大内存，但有些应用需要的内存大于8GB或16GB，此时我们可以通过Swap内存来扩展系统能使用的最大内存容量。方法如下所示：
+创建32G的swap文件
+首先创建一个swap 文件，下面的命令会创建一个32GB 大小的swap 文件，
+容量大小请根据自己的需求进行修改，密码Mind@123
+(base) HwHiAiUser@orangepiaipro:~$ sudo fallocate -l 32G /swapfile
+*注意：如果已经启用了Swap分区再运行fallocate 命令会报下面的错误：
+fallocate: fallocate failed: Text file busy
+需要先运行swapoff /swapfile命令关闭系统上的swap分区才行。
+修改文件权限，确保只有root 用户可以读写
+(base) HwHiAiUser@orangepiaipro:~$ sudo chmod 600 /swapfile
+然后把这个文件设置成swap 空间
+(base) HwHiAiUser@orangepiaipro:~$ sudo mkswap /swapfile
+启用swap
+(base) HwHiAiUser@orangepiaipro:~$ sudo swapon /swapfile
+检查swap 内存是否已经添加成功
+(base) HwHiAiUser@orangepiaipro:~$ free -h
+                total        used         free       shared       buff/cache    available
+Mem:           15Gi       879Mi        12Gi        56Mi       2.1Gi         14Gi
+Swap:           31Gi          0B        31Gi
+添加到重启设置
+如果需要swap 设置在重启之后依然有效，可以将对应的配置添加到/etc/fstab文件中：
+(base) HwHiAiUser@orangepiaipro:~$ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+测试并升级MindSpore
+测试MindSpore
+开发板的Ubuntu 系统中已经预装了MindSpore 2.2.12，使用下面的方法可以测试下MindSpore 是否能正常使用。
+首先请根据2.5 Swap内存扩容给系统额外添加32GB的Swap内存
+在HwHiAiUser用户中执行下面的命令：
+(base) HwHiAiUser@orangepiaipro:~$ python -c \
+"import mindspore;mindspore.set_context(device_target='Ascend');mindspore.run_check()"
+等待一段时间后，如果能看到下面的输出就说明MindSpore 能正常使用：
+MindSpore version: 2.2.12.20240312
+The result of multiplication calculation is correct, MindSpore has been installed on platform [Ascend] successfully!
+升级MindSpore
+安装MindSpore框架
+方法一：在终端直接运行安装命令
+pip install mindspore==2.2.14
+方法二：下载whl包进行安装
+wget https://ms-release.obs.cn-north-4.myhuaweicloud.com/2.2.14/MindSpore/unified/aarch64/mindspore-2.2.14-cp39-cp39-linux_aarch64.whl
+# 在终端进入到whl包所在路径，执行pip install命令
+pip install mindspore-2.2.14-cp39-cp39-linux_aarch64.whl
+CANN包升级（算子开发专用）
+登录开发板
+通过2.3连接并登录香橙派AI Pro登录开发板。
+登录root用户
+root用户密码：Mind@123
+（base) HwHiAiUser@orangepiaipro:~$ su
+Password:
+(base) root@orangepiaipro:/home/HwHiAiUser#
+删除镜像中安装CANN包释放磁盘空间，防止安装新的CANN包磁盘空间不足
+(base) root@orangepiaipro:/home/HwHiAiUser# cd /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/script/
+(base) root@orangepiaipro: /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/script# ./uninstall.sh
+(base) root@orangepiaipro: /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/script# chmod 755 –R /usr/local/Ascend/ascend-toolkit
+(base) root@orangepiaipro: /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/script#rm –fr /usr/local/Ascend/ascend-toolkit/
+删除CANN7.0安装包
+打开昇腾CANN官网访问社区版资源下载地址，下载最新版本的toolkit包，如下图：
+下载CANN8.0
+进入CANN包下载目录
+(base) root@orangepiaipro: /usr/local/Ascend/ascend-toolkit# cd /home/HwHiAiUser/Downloads
+*注意：Orange Pi AI Pro浏览器文件默认下载目录：/home/HwHiAiUser/Downloads
+给CANN包添加执行权限
+(base) root@orangepiaipro: /home/HwHiAiUser/Downloads# chmod +x ./Ascend-cann-toolkit_8.0.RC3.alpha001_linux-aarch64.run
+安装CANN包
+(base) root@orangepiaipro: /home/HwHiAiUser/Downloads#./Ascend-cann-toolkit_8.0.RC3.alpha001_linux-aarch64.run --install
+弹出框
+安装时弹出此提示后输入Y然后按回车键继续安装。
+安装成功如下图所示：
+安装成功
+设置环境变量
+(base) root@orangepiaipro: /home/HwHiAiUser/Downloads # echo “source /usr/local/Ascend/ascend-toolkit/set_env.sh” >> ~/.bashrc
+(base) root@orangepiaipro: /home/HwHiAiUser/Downloads # source ~/.bashrc
+执行算子样例(算子开发专用)
+下载样例仓代码，执行算子样例，验证算子开发环境是否搭建成功。
+下载算子样例
+(base) root@orangepiaipro: /home/HwHiAiUser/Downloads # git clone https://gitee.com/ascend/samples.git
+执行算子样例
+ (base) root@orangepiaipro: /home/HwHiAiUser/Downloads # cd samples/operator/AddCustomSample/KernelLaunch/AddKernelInvocation
+(base) root@orangepiaipro: /home/HwHiAiUser/Downloads/samples/operator/AddCustomSample/KernelLaunch/AddKernelInvocation # bash run.sh –v Ascend310B4 –r npu
+执行成功如下图所示：
+本章小结
+本章主要介绍Orange Pi AI Pro开发环境搭建，后续可以基于该环境运行昇腾实验样例。

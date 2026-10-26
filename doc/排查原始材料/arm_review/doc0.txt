@@ -1,0 +1,1372 @@
+华为“智能基座”系列课程
+香橙派AIpro的
+机械臂垃圾分类实验
+版本：1.1
+华为技术有限公司
+版权所有 © 华为技术有限公司 2024。 保留一切权利。
+非经本公司书面许可，任何单位和个人不得擅自摘抄、复制本文档内容的部分或全部，并不得以任何形式传播。
+商标声明
+ 和其他华为商标均为华为技术有限公司的商标。
+本文档提及的其他所有商标或注册商标，由各自的所有人拥有。
+注意
+您购买的产品、服务或特性等应受华为公司商业合同和条款的约束，本文档中描述的全部或部分产品、服务或特性可能不在您的购买或使用范围之内。除非合同另有约定，华为公司对本文档内容不做任何明示或暗示的声明或保证。
+由于产品版本升级或其他原因，本文档内容会不定期进行更新。除非另有约定，本文档仅作为使用指导，本文档中的所有陈述、信息和建议不构成任何明示或暗示的担保。
+华为技术有限公司
+地址：
+深圳市龙岗区坂田华为总部办公楼     邮编：518129
+网址：
+http://e.huawei.com
+目录
+1 实验介绍3
+1.1 外观结构3
+1.2 功能与原理介绍3
+1.2.1 任意位置积木分拣4
+1.2.2 任意位置积木堆叠4
+2 样例组装5
+2.1 准备组件5
+2.2 机械臂组装6
+2.3 开发板环境搭建6
+3 项目准备8
+3.1 项目简介8
+3.1.1 请求与响应配置文件介绍10
+3.1.2 ROS2服务与机械臂仿真代码详解11
+3.1.3 任意位置积木分拣代码详解14
+3.1.4 任意位置积木堆叠代码22
+3.2 项目下载30
+3.2.1 SSH登录root用户30
+3.2.2 禁用开发板的休眠文件31
+3.2.3 下载项目代码31
+3.2.4 下载机械臂依赖文件31
+3.2.5 下载模型31
+3.2.6 禁用Conda环境32
+3.3 环境搭建32
+3.3.1 安装ROS2 Humble及核心组件32
+3.3.2 安装ais_bench及依赖32
+3.3.3 ​配置系统环境33
+3.3.4 ​编译扩展组件33
+3.3.5 添加环境变量33
+3.3.6 测试ROS2核心功能34
+4 连接并启动机械臂35
+4.1 连接机器臂和开发板35
+5 项目运行41
+5.1 编译工作空间41
+5.1.1 设置环境变量41
+5.1.2 编译工作空间41
+5.2 校准摄像头（该步骤首次执行，后续可跳过）42
+5.3 启动机械臂可视化rviz47
+5.4 启动机械臂积木分拣程序50
+5.5 调整机械臂的夹取动作51
+5.6 调整机械臂的补偿量54
+5.7 启动机械臂积木堆叠程序55
+6 实验总结56
+实验介绍
+E2E智能机械臂样例是基于香橙派AIpro开发板的AI推理功能和机械臂的二次开发。该款样例旨在为用户提供方便快捷的基于香橙派AIpro开发板在机器人场景下的开发思路，用户可快速上手、验证，可广泛应用于高校教育、科学研究、工业验证等场景。
+外观结构
+功能与原理介绍
+智能机械臂基于香橙派AIpro开发板的深度学习AI推理功能和机械臂的二次开发，通过串口硬件通信和python接口软件支持实现。
+任意位置积木分拣
+基于开发板的内置YOLOv5神经网络模型的推理结果，标记十字标定板中积木的位置，并使用机械臂进行分拣。
+通过摄像头提取十字标定板轮廓，通过机器视觉方法提取轮廓的四个角点，透视变换轮廓内的平面。
+使用模型适配工具训练转换的om模型进行推理，最后根据推理结果下发指令，控制机械臂抓取在摄像头可视范围内的任意位置摆放的积木，并移动至对应颜色区域。
+任意位置积木堆叠
+基于开发板的内置YoloV5神经网络模型的推理结果，标记十字标定板中积木的位置，并使用机械臂进行堆叠。
+通过摄像头提取十字标定板轮廓，通过机器视觉方法提取轮廓的四个角点，透视变换轮廓内的平面。
+使用模型适配工具训练转换的om模型进行推理，最后根据推理结果下发指令，控制机械臂抓取在摄像头可视范围内的任意位置摆放的积木，并移动至灰色区域并堆叠在一起。
+样例组装
+准备组件
+机械臂可以通过链接进行单独购买（选择无主板类型），其中物料选型如下图所示。
+机械臂应用样例所需组件及组件关键部位参数见下表。
+模块名称
+数量/个
+是否需要单独购买
+香橙派AIpro开发板及电源适配器
+1
+否
+机械臂及电源适配器
+1
+是（机械臂套装中包含）
+机械臂扩展板
+1
+USB摄像头
+1
+标定板地图
+1
+SD卡
+1
+40PIN排线
+1
+网线
+1
+是
+机械臂组装
+请参照第三方购买的机械臂的组装说明书进行组装。
+开发板环境搭建
+香橙派AIpro开发板
+环境要求
+镜像版本
+opiaipro_ubuntu22.04_desktop_aarch64_20240318
+操作系统
+Ubuntu22.04
+CPU架构
+ARM64
+请参考下方《手把手教你搭建OrangePi AIpro开发环境》中的章节，完成：
+2.1准备配件
+2.2镜像烧录
+2.3连接并登录香橙派AIpro（网线直连方式）
+2.4开发板网络连接（通过PC共享网络联网）
+或参考《初识香橙派AIpro开发板》在线课程中的“手把手教你搭建OrangePi AIpro开发环境”，完成：
+01节准备配件
+02节镜像烧录
+03节连接开发板1.0插卡
+03节连接开发板3.0串口和网线连接
+04节网络连接3.0 PC共享网络
+网课链接及二维码：
+https://www.hiascend.com/developer/courses/detail/1895372935222571009 
+项目准备
+项目简介
+机械臂代码文件目录如下所示：
+ros2_robot_arm   # 源码仓
+├── ros2_ws
+│   └── src
+│       ├── dofbot_garbage_yolov5   # 色块分拣功能包
+│       │   ├── dofbot_garbage_yolov5
+│       │   │   ├── __init__.py
+│       │   │   ├── config   # 配置文件
+│       │   │   │   ├── XYT_config.txt   # 机械臂复位角度
+│       │   │   │   ├── data_collect_idx.txt   # 图像采集序号记录文件
+│       │   │   │   ├── dp.bin   # 透视变换矩阵
+│       │   │   │   └── offset.txt   # 硬件误差配置
+│       │   │   ├── main.py   # 主函数入口
+│       │   │   ├── model   # 模型文件
+│       │   │   │   ├── yolov5s_bs1.om   # 推理模型
+│       │   │   │   └── coco_names.txt
+│       │   │   ├── test_imgs
+│       │   │   │   ├── 2.jpg
+│       │   │   │   └── …
+│       │   │   └── utils
+│       │   │       ├── det_utils.py   # ACL推理功能文件
+│       │   │       ├── dofbot_config.py   # 机械臂描述文件
+│       │   │       ├── garbage_grap.py   # 垃圾分拣抓取脚本
+│       │   │       ├── garbage_identify.py   # 垃圾分拣识别脚本
+│       │   │       └── npu_utils.py   # ACL推理功能文件 
+│       │   ├── package.xml
+│       │   ├── resource
+│       │   │   └── dofbot_garbage_yolov5
+│       │   ├── setup.cfg
+│       │   ├── setup.py
+│       │   ├── test
+│       │   │   ├── test_det_utils.py
+│       │   │   ├── test_garbage_identify.py
+│       │   │   └── test_npu_utils.py
+│       │   └── tools
+│       │       └── 相机校准.ipynb   # 相机校准脚本
+│       ├── robot_arm_color_stacking   # 色块堆叠功能包
+│           ├── package.xml
+│           ├── resource
+│           │   └── robot_arm_color_stacking
+│           ├── robot_arm_color_stacking
+│           │   ├── __init__.py
+│           │   ├── config   # 配置文件
+│           │   │   ├── XYT_config.txt   # 机械臂复位角度
+│           │   │   ├── color_stacking.txt   
+│           │   │   ├── data_collect_idx.txt   
+│           │   │   ├── dp.bin   # 透视变换矩阵
+│           │   │   └── offset.txt   # 硬件误差配置
+│           │   ├── main.py   # 主函数入口
+│           │   ├── model   # 模型文件
+│           │   │   ├── yolov5s_bs1.om   # 推理模型
+│           │   │   └── coco_names.txt
+│           │   ├── test_imgs
+│           │   │   ├── 2.jpg
+│           │   │   └── …
+│           │   └── utils
+│           │       ├── det_utils.py   # 推理功能文件
+│           │       ├── dofbot_config.py   # 机械臂描述文件
+│           │       ├── npu_utils.py   # ACL推理功能文件
+│           │       ├── stacking_grap.py   # 色块堆叠抓取功能文件
+│           │       └── stacking_target.py   # 色块堆叠目标定位文件
+│           ├── setup.cfg
+│           └── setup.py
+│       ├── dofbot_info   # 机械臂接口功能包
+│       │   ├── CMakeLists.txt
+│       │   ├── package.xml
+│       │   └── srv   # 服务信息文件
+│       │       └── Kinemarics.srv
+│       ├── dofbot_moveit   # 机械臂描述功能包
+│       │   ├── CMakeLists.txt
+│       │   ├── config
+│       │   │   └── server_param.yaml
+│       │   ├── include
+│       │   │   └── dofbot_moveit
+│       │   │       └── dofbot_kinemarics.h   # 机械臂运动学头文件
+│       │   ├── launch   # 工程启动文件
+│       │   │   ├── dofbot_moveit.launch.py
+│       │   │   └── kinematic_server.launch.py
+│       │   ├── lib   # 坐标求解库文件
+│       │   │   └── libdofbot_kinemarics.so
+│       │   ├── meshes   # 三维结构文件
+│       │   │   ├── base_link.STL
+│       │   │   ├── link1.STL
+│       │   │   ├── …
+│       │   │   └── link5.STL
+│       │   ├── package.xml
+│       │   ├── rviz   # 可视化文件
+│       │   │   ├── dofbot.rviz
+│       │   │   └── urdf.rviz
+│       │   ├── src
+│       │   │   └── dofbot_server.cpp   # 机械臂运动学服务器
+│       │   └── urdf
+│       │       └── dofbot.urdf   # 机械臂结构描述文件 
+│       ├── robot_arm_bringup   # 机械臂系统启动文件
+│       │   ├── launch
+│       │   │   ├── block_cls_bringup.launch.py   # 色块分拣系统启动文件
+│       │   │   └── color_stacking_bringup.launch.py   # 色块堆叠系统启动文件
+│       │   ├── package.xml
+│       │   ├── resource
+│       │   │   └── robot_arm_bringup
+│       │   ├── robot_arm_bringup
+│       │   │   └── __init__.py
+│       │  ├── setup.cfg
+│       │  └── setup.py
+├── imgs
+│   ├── 1.PNG
+│   ├── …
+│   └── 24.PNG
+├── requirements.txt   #  Python依赖清单
+├── setenv.sh   #  环境变量配置脚本 
+└── README.md
+请求与响应配置文件介绍
+dofbot_info功能包包含了需要编译的消息文件。“dofbot_info/srv/Kinemarics.srv”文件中，横线上方表示客户端发送请求的消息格式，下方表示服务器回复响应的消息格式。
+客户端发送的请求包括以下内容：
+机械臂基坐标系下的目标坐标（tar_x, tar_y, tar_z）
+目标姿态角（roll, pitch, yaw）
+机械臂目前的六个关节信息（cur_joint1, cur_joint2, cur_joint3, cur_joint4, cur_joint5, cur_joint6）
+用户请求的模式（kin_name）。
+除用户请求的模式为字符串类型外，其他消息都应为浮点型。用户请求的模式分为正运动学解（fk）以及逆运动学解（ik）：
+当模式为正运动学解时，只需填入机械臂目前的六个关节信息。
+当模式为逆运动学解时，则无需填入机械臂目前的六个关节信息。
+服务端响应的消息全为浮点型：
+当模式为正运动学解时，服务器会响应相对于机械臂基坐标系的到达坐标（x, y, z）和到达姿态角（roll, pitch, yaw）。
+当模式为逆运动学解时，服务器会响应机械臂的六个关节目标（joint1, joint2, joint3, joint4, joint5, joint6）。
+float64 tar_x
+float64 tar_y
+float64 tar_z
+float64 roll
+float64 pitch
+float64 yaw
+float64 cur_joint1
+float64 cur_joint2
+float64 cur_joint3
+float64 cur_joint4
+float64 cur_joint5
+float64 cur_joint6
+string  kin_name
+---
+float64 joint1
+float64 joint2
+float64 joint3
+float64 joint4
+float64 joint5
+float64 joint6
+float64 x
+float64 y
+float64 z
+float64 roll
+float64 pitch
+float64 yaw
+ROS2服务与机械臂仿真代码详解
+dofbot_moveit功能包包含了ROS2正逆运动学解算服务器、服务器和仿真环境下可视化机械臂的启动文件（launch）、以及用于描述三维机械臂模型的URDF描述文件。
+“dofbot_moveit/urdf/dofbot.urdf”文件为约定俗成的机器人三维描述文件（urdf全称为Unified Robot Description Format）。
+示例代码为机械臂的三维模型定义片段：
+ 
+    <!-- 实体描述 -->
+    <link name="base_link">
+        <!-- 视觉描述 -->
+        <visual>
+            <origin
+                    xyz="0 0 0"
+                    rpy="0 0 0"/>
+            <geometry>
+                <mesh
+                        filename="package://dofbot_moveit/meshes/base_link.STL"/>
+            </geometry>
+            <material
+                    name="">
+                <color
+                        rgba="0.7 0.7 0.7 1"/>
+            </material>
+        </visual>
+        <!-- 碰撞描述 -->
+        <collision>
+            <origin
+                    xyz="0 0 0"
+                    rpy="0 0 0"/>
+            <geometry>
+                <mesh
+                        filename="package://dofbot_moveit/meshes/base_link.STL"/>
+            </geometry>
+        </collision>
+    </link>
+robot标签定义了机器人的名称为dofbot，在此标签下有多个子标签，如link、joint等，每个子标签定义了当前机器人的组成部分。每个组成部分也拥有属于自己的子标签。这些子标签为该组成部分的属性，例如这个具体关节所在空间的位置和姿态，以及关节的颜色及材质等。通过urdf文件对机器人的描述，可以在仿真环境中可视化机械臂，如下图所示：
+“dofbot_moveit/src/dofbot_server.cpp”文件定义了正逆运动学解的服务器，其核心代码如下：
+srvicecallback()函数为正逆运动学解服务器的回调函数，两个参数分别为客户端发送的请求（request）和服务端回复（response）的响应。二者皆由前文中提到的srv消息类型文件定义。当客户端发送的请求模式为求解正运动学（fk），则调用响应函数，进行响应运算，获得目标位置的坐标和姿态角，存入响应变量（response）中，反之同理。
+private:
+    bool srvicecallback(const std::shared_ptr<dofbot_info::srv::Kinemarics::Request> request,
+                        std::shared_ptr<dofbot_info::srv::Kinemarics::Response> response
+    ) {
+        const char *urdf_file = urdf_path_.c_str();
+        if (request->kin_name == "fk") {
+            double joints[]{request->cur_joint1, 
+                            request->cur_joint2, 
+                            request->cur_joint3, 
+                            request->cur_joint4,
+                            request->cur_joint5};
+            // 定义目标关节角容器
+            vector<double> initjoints;
+            // 定义位姿容器
+            vector<double> initpos;
+            // 目标关节角度单位转换,由角度转换成弧度
+            for (int i = 0; i < 5; ++i) {
+                initjoints.push_back((joints[i] - 90) * DE2RA);
+            }
+            // 调取正解函数,获取当前位姿
+            dofbot.dofbot_getFK(urdf_file, initjoints, initpos);
+            cout << "--------- Fk ---------" << a << "--------- Fk ---------" << endl;
+            cout << "XYZ坐标 ： " << initpos.at(0) << " ," << initpos.at(1) << " ," << initpos.at(2) << endl;
+            cout << "Roll,Pitch,Yaw： " << initpos.at(3) << " ," << initpos.at(4) << " ," << initpos.at(5) << endl;
+            response->x = initpos.at(0);
+            response->y = initpos.at(1);
+            response->z = initpos.at(2);
+            response->roll = initpos.at(3);
+            response->pitch = initpos.at(4);
+            response->yaw = initpos.at(5);
+        }
+任意位置积木分拣代码详解
+dofbot_garbage_yolov5功能包包含了训练好的yolov5模型及功能脚本。主要为通过yolov5进行色块的识别与定位，根据位置控制机械臂进行积木分类的代码。
+“dofbot_garbage_yolov5/dofbot_garbage_yolov5/utils/garbage_identify.py” 为垃圾识别与抓取系统的逻辑代码：
+class GarbageIdentify:
+    def __init__(self, test_mode=False):
+        self.cfg = {
+            "conf_thres": 0.7,
+            "iou_thres": 0.7,
+            "input_shape": [640, 640],
+        }
+        # 创建ROS节点
+        self.node = rclpy.create_node("dofbot_garbage")
+        self.node_pub = rclpy.create_node("dofbot_img_node")
+        FILE = Path(__file__).resolve()
+        lib_root = os.path.dirname(FILE.parents[0])
+        lib_site_pkg = os.path.dirname(lib_root)
+        lib_python = os.path.dirname(lib_site_pkg)
+        lib_path = os.path.dirname(lib_python)
+        shared_path = os.path.join(os.path.dirname(lib_path), "share")
+        share_root = os.path.join(shared_path, "dofbot_garbage_yolov5")
+        model_folder = os.path.join(share_root, "model")
+        model_path = os.path.join(model_folder, "yolov5s_bs1.om")
+        label_path = os.path.join(model_folder, "coco_names.txt")
+        cfg_folder = os.path.join(share_root, "config")
+        offset_cfg_path = os.path.join(cfg_folder, "offset.txt")
+        if test_mode:
+            lib_root = os.path.dirname(FILE.parents[0])
+            model_path = os.path.join(lib_root, "model", "yolov5s_bs1.om")
+            label_path = os.path.join(lib_root, "model", "coco_names.txt")
+            offset_cfg_path = os.path.join(lib_root, "config", "offset.txt")
+        self.model = InferSession(0, model_path)
+        self.labels_dict = get_labels_from_txt(label_path)
+        self.WARMUP_INDEX = 5
+        self.test_mode = test_mode
+        # 初始化图像
+        self.frame = None
+        # 创建机械臂实例
+        self.arm = Arm_Lib.Arm_Device()
+        # 机械臂识别位置调节
+        self.xy = [90, 130]
+        self.garbage_index = 0
+        # 创建垃圾识别抓取实例
+        self.grap_move = GarbageGrapMove()
+        # 创建用于调用的ROS服务的句柄
+        self.client = self.node.create_client(Kinemarics, "trial_service")
+        # 创建ROS发布摄像头图像信息
+        self.image_pub = self.node_pub.create_publisher(Image, "cam_data", 10)
+        self.bridge = CvBridge()
+        self.offset = -1
+        self.x_offset = -1
+        with open(offset_cfg_path, "r") as f:
+            self.offset = float(f.readline())
+            self.x_offset = float(f.readline())
+            print("y_offset is", self.offset)
+            print("x_offset is", self.x_offset)
+        print("finish init..")
+    def garbage_grap(self, msg, xy=None):
+        """
+        执行抓取函数
+        :param msg: {name:pos,...}
+        :param xy: 机械臂初始位置 list, eg: [89, 134]
+        """
+        if xy != None:
+            self.xy = xy
+        if len(msg) != 0:
+            self.arm.Arm_Buzzer_On(1)
+            sleep(0.5)
+        new_msg = sorted(list(msg.items()), key=lambda x: x[1][1])
+        print("new msg is", new_msg)
+        for elm in new_msg:
+            try:
+                name = elm[0]
+                # 此处ROS反解通讯,获取各关节旋转角度
+                joints = self.server_joint(msg[name])
+                # 调取移动函数
+                self.grap_move.arm_run(str(name), joints)
+            except Exception:
+                print("sqaure_pos empty")
+        # 初始位置
+        joints_0 = [self.xy[0], self.xy[1], 0, 0, 90, 30]
+        print("back position is", joints_0)
+        # 移动至初始位置
+        self.arm.Arm_serial_servo_write6_array(joints_0, 1000)
+        sleep(1)
+    def garbage_run(self, image, garbage_index=None):
+        """
+        执行垃圾识别函数
+        :param image: 原始图像
+        :return: 识别后的图像,识别信息(name, msg)
+        """
+        if garbage_index:
+            # for testing
+            self.garbage_index = garbage_index
+        # 规范输入图像大小
+        self.frame = cv.resize(image, (640, 480))
+        txt0 = "Model-Loading..."
+        msg = {}
+        # 模型预热
+        if self.garbage_index < self.WARMUP_INDEX:
+            cv.putText(
+                self.frame, txt0, (190, 50), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2
+            )
+            self.garbage_index += 1
+            return self.frame, msg
+        if self.garbage_index >= self.WARMUP_INDEX:
+            # 创建消息容器
+            try:
+                # 获取识别消息
+                msg = self.get_pos()
+                print("msg is:", msg)
+            except Exception:
+                print("get_pos NoneType")
+            return self.frame, msg
+“dofbot_garbage_yolov5/dofbot_garbage_yolov5/utils/dofbot_config.py”为图像检测与机器视觉逻辑代码：
+def calibration_map(self, image, xy=None, threshold_num=130):
+    """
+    放置方块区域检测函数
+    :param image:输入图像
+    :return:轮廓区域边点,处理后的图像
+    """
+    if xy != None:
+        self.xy = xy
+    # 机械臂初始位置角度
+    joints_init = [self.xy[0], self.xy[1], 0, 0, 90, 0] 
+    # 将机械臂移动到标定方框的状态
+    self.arm.Arm_serial_servo_write6_array(joints_init, 500)
+    self.image = image
+    self.threshold_num = threshold_num
+    # 创建边点容器
+    dp = []
+    h, w = self.image.shape[:2]
+    # 获取轮廓点集(坐标)
+    contours = self.morphological_processing()
+    # 遍历点集
+    for i, c in enumerate(contours):
+        # 计算轮廓区域。
+        area = cv.contourArea(c)
+        low_bound = None
+        high_bound = None
+        if self.use_other_cam:
+            low_bound = h * w / 2 - 40000
+        else:
+            low_bound = h * w / 2
+        high_bound = h * w
+        # 设置轮廓区域范围
+        if low_bound < area < high_bound:
+            # 计算多边形的矩
+            mm = cv.moments(c)
+            if mm["m00"] == 0:
+                continue
+            cx = mm["m10"] / mm["m00"]
+            cy = mm["m01"] / mm["m00"]
+            # 绘制轮廓区域
+            cv.drawContours(self.image, contours, i, (255, 255, 0), 2)
+            # 获取轮廓区域边点
+            dp = np.squeeze(cv.approxPolyDP(c, 100, True))
+            # 绘制中心
+            if not self.data_collect:
+                cv.circle(
+                    self.image, (np.int_(cx), np.int_(cy)), 5, (0, 0, 255), -1
+                )
+    return dp, self.image
+def morphological_processing(self):
+    """
+    形态学及去噪处理,并获取轮廓点集
+    """
+    # 将图像转为灰度图
+    gray = cv.cvtColor(self.image, cv.COLOR_BGR2GRAY)
+    # 使用高斯滤镜模糊图像。
+    gray = cv.GaussianBlur(gray, (5, 5), 1)
+    # 图像二值化操作
+    _, threshold = cv.threshold(gray, self.threshold_num, 255, cv.THRESH_BINARY)
+    # 获取不同形状的结构元素
+    kernel = np.ones((3, 3), np.uint8)
+    # 形态学开操作
+    if self.use_other_cam:
+        blur = cv.morphologyEx(threshold, cv.MORPH_OPEN, kernel, iterations=8)
+    else:
+        blur = cv.morphologyEx(threshold, cv.MORPH_OPEN, kernel, iterations=4)
+    # 提取模式
+    mode = cv.RETR_EXTERNAL
+    # 提取方法
+    method = cv.CHAIN_APPROX_NONE
+    # 获取轮廓点集(坐标) python2和python3在此处略有不同
+    # 层级关系 参数一：输入的二值图，参数二：提取模式，参数三：提取方法。
+    contours, _ = cv.findContours(blur, mode, method)
+    return contours
+def perspective_transform(self, dp, image):
+    """
+    透视变换
+    :param dp: 方框边点(左上,左下,右下,右上)
+    :param image: 原始图像
+    :return: 透视变换后图像
+    """
+    if len(dp) != 4:
+        return
+    upper_left = []
+    lower_left = []
+    lower_right = []
+    upper_right = []
+    for i in range(len(dp)):
+        if dp[i][0] < 320 and dp[i][1] < 240:
+            upper_left = dp[i]
+        if dp[i][0] < 320 and dp[i][1] > 240:
+            lower_left = dp[i]
+        if dp[i][0] > 320 and dp[i][1] > 240:
+            lower_right = dp[i]
+        if dp[i][0] > 320 and dp[i][1] < 240:
+            upper_right = dp[i]
+    # 原图中的四个顶点
+    pts1 = np.float32([upper_left, lower_left, lower_right, upper_right])
+    # 变换后的四个顶点
+    pts2 = np.float32([[0, 0], [0, 480], [640, 480], [640, 0]])
+    # 根据四对对应点计算透视变换。
+    M = cv.getPerspectiveTransform(pts1, pts2)
+    # 将透视变换应用于图像。
+    Transform_img = cv.warpPerspective(image, M, (640, 480))
+    return Transform_img
+“dofbot_garbage_yolov5/dofbot_garbage_yolov5/utils/garbage_grap.py”为机械臂抓取与移动分拣的逻辑代码：
+class GarbageGrapMove:
+    def __init__(self):
+        # 设置移动状态
+        self.move_status = True
+        # 创建机械臂实例
+        self.arm = Arm_Lib.Arm_Device()
+        # 夹爪加紧角度
+# 超过120夹的过紧会有响声
+        self.grap_joint = 120
+    def move(self, joints, joints_down):
+        """
+        移动过程
+        :param joints: 移动到物体位置的各关节角度
+        :param joints_down: 机械臂抬起各关节角度
+        """
+        joints_uu = [90, 80, 50, 50, 265, self.grap_joint]
+        # 抬起
+        joints_up = [joints_down[0], 80, 50, 50, 265, 30]
+        # 移动至物体位置上方
+        self.arm.Arm_serial_servo_write6_array(joints_uu, 1200)
+        sleep(1.2)
+        # 松开夹爪
+        self.arm.Arm_serial_servo_write(6, 0, 800)
+        sleep(0.5)
+        # 移动至物体位置
+        self.arm.Arm_serial_servo_write6_array(joints, 800)
+        sleep(0.8)
+        # 进行抓取,夹紧夹爪
+        self.arm.Arm_serial_servo_write(6, self.grap_joint, 800)
+        sleep(0.8)
+        # 架起
+        self.arm.Arm_serial_servo_write6_array(joints_uu, 1000)
+        sleep(1)
+        # 抬起至对应位置上方
+        self.arm.Arm_serial_servo_write(1, joints_down[0], 800)
+        sleep(0.8)
+        # 抬起至对应位置
+        self.arm.Arm_serial_servo_write6_array(joints_down, 1000)
+        sleep(1)
+        # 释放物体,松开夹爪
+        self.arm.Arm_serial_servo_write(6, 30, 500)
+        sleep(0.5)
+        # 抬起
+        self.arm.Arm_serial_servo_write6_array(joints_up, 1000)
+        sleep(1)
+    def arm_run(self, name, joints):
+        """
+        机械臂移动函数
+        :param name:识别的垃圾名称
+        :param joints: 反解求得的各关节角度
+        """
+        # 有害垃圾--红色
+        if (
+            name == "Syringe"
+            or name == "Used_batteries"
+            or name == "Expired_cosmetics"
+            or name == "Expired_tablets"
+            and self.move_status
+        ):
+            # 此处设置,需执行完本次操作,才能向下运行
+            self.move_status = False
+            # 获得目标关节角
+            joints = [joints[0], joints[1], joints[2], joints[3], 265, 30]
+            # 移动到垃圾桶位置放下对应姿态
+            joints_down = [45, 50, 20, 60, 265, self.grap_joint]
+            # 移动
+            self.move(joints, joints_down)
+            # 移动完毕
+            self.move_status = True
+        # 厨余垃圾--绿色
+        elif (
+            name == "Fish_bone"
+            or name == "Watermelon_rind"
+            or name == "Apple_core"
+            or name == "Egg_shell"
+            and self.move_status
+        ):
+            self.move_status = False
+            joints = [joints[0], joints[1], joints[2], joints[3], 265, 30]
+            joints_down = [147, 75, 0, 50, 265, self.grap_joint]
+            self.move(joints, joints_down)
+            self.move_status = True
+        # 可回收垃圾--蓝色
+        elif (
+            name == "Zip_top_can"
+            or name == "Newspaper"
+            or name == "Old_school_bag"
+            or name == "Book"
+            and self.move_status
+        ):
+            self.move_status = False
+            joints = [joints[0], joints[1], joints[2], joints[3], 265, 30]
+            joints_down = [27, 75, 0, 50, 265, self.grap_joint]
+            self.move(joints, joints_down)
+            self.move_status = True
+        # 其他垃圾--灰色
+        elif (
+            name == "Yellow"
+            or name == "Cigarette_butts"
+            or name == "Toilet_paper"
+            or name == "Peach_pit"
+            or name == "Disposable_chopsticks"
+            and self.move_status
+        ):
+            self.move_status = False
+            joints = [joints[0], joints[1], joints[2], joints[3], 265, 30]
+            joints_down = [133, 50, 20, 60, 265, self.grap_joint]
+            self.move(joints, joints_down)
+            self.move_status = True
+任意位置积木堆叠代码
+robot_arm_color_stacking功能包包含了训练好的yolov5模型及功能脚本。主要为通过yolov5进行色块的识别与定位，根据位置控制机械臂进行积木堆叠的代码。
+“robot_arm_color_stacking/robot_arm_color_stacking/utils/stacking_target.py”为目标识别和机械臂控制的逻辑代码：
+class stacking_GetTarget:
+    def __init__(self, test_mode=False):
+        self.cfg = {
+            "conf_thres": 0.85,
+            "iou_thres": 0.8,
+            "input_shape": [640, 640],
+        }
+        FILE = Path(__file__).resolve()
+        lib_root = os.path.dirname(FILE.parents[0])
+        lib_site_pkg = os.path.dirname(lib_root)
+        lib_python = os.path.dirname(lib_site_pkg)
+        lib_path = os.path.dirname(lib_python)
+        shared_path = os.path.join(os.path.dirname(lib_path), "share")
+        share_root = os.path.join(shared_path, "robot_arm_color_stacking")
+        model_folder = os.path.join(share_root, "model")
+        model_path = os.path.join(model_folder, "yolov5s_bs1.om")
+        label_path = os.path.join(model_folder, "coco_names.txt")
+        cfg_folder = os.path.join(share_root, "config")
+        if test_mode:
+            lib_root = os.path.dirname(FILE.parents[0])
+            model_path = os.path.join(lib_root, "model", "yolov5s_bs1.om")
+            label_path = os.path.join(lib_root, "model", "coco_names.txt")
+            cfg_folder = os.path.join(lib_root, "config")
+        self.offset_cfg_path = os.path.join(cfg_folder, "offset.txt")
+        self.model = InferSession(0, model_path)
+        self.labels_dict = get_labels_from_txt(label_path)
+        self.test_mode = test_mode
+        self.image = None
+        self.color_name = None
+        self.color_status = True
+        # 机械臂识别位置调节
+        self.xy = [90, 135]
+        # 创建机械臂实例
+        self.arm = Arm_Lib.Arm_Device()
+        # 创建抓取实例
+        self.grap = stacking_grap()
+        # ROS节点初始化
+        self.node = rclpy.create_node("dofbot_stacking")
+        self.node_pub = rclpy.create_node("dofbot_img_node")
+        # 创建获取反解结果的客户端
+        self.client = self.node.create_client(Kinemarics, "trial_service")
+        # 用于预热模型
+        self.garbage_index = 0
+        # 创建ROS发布摄像头图像信息
+        self.image_pub = self.node_pub.create_publisher(Image, "cam_data", 10)
+        self.bridge = CvBridge()
+        self.offset = -1
+        self.x_offset = -1
+        with open(self.offset_cfg_path, "r") as f:
+            self.offset = float(f.readline())
+            self.x_offset = float(f.readline())
+            print("y_offset is", self.offset)
+            print("x_offset is", self.x_offset)
+        print("finish init..")
+    def target_run(self, msg, xy=None):
+        """
+        抓取函数
+        :param msg: (颜色,位置)
+        """
+        if xy != None:
+            self.xy = xy
+        num = 1
+        move_status = 0
+        for i in msg.values():
+            if i != None:
+                move_status = 1
+        if move_status == 1:
+            self.arm.Arm_Buzzer_On(1)
+            sleep(0.5)
+        msg_list = sorted(list(msg.items()), key=lambda x: x[1][1])
+        for name, pos in msg_list:
+            print("pos : ", pos)
+            print("name : ", name)
+            try:
+                joints = self.server_joint(pos)
+                self.grap.arm_run(str(num), joints)
+                num += 1
+            except Exception:
+                print("sqaure_pos empty")
+        # 返回至中心位置
+        self.arm.Arm_serial_servo_write(1, 90, 1000)
+        sleep(1)
+        # 初始位置
+        joints_0 = [self.xy[0], self.xy[1], 0, 0, 90, 30]
+        # 移动至初始位置
+        self.arm.Arm_serial_servo_write6_array(joints_0, 1000)
+        sleep(1)
+    def select_color(self, image, garbage_index=0):
+        """
+        选择识别颜色
+        :param image:输入图像
+        :return: 输出处理后的图像,(颜色,位置)
+        """
+        if self.test_mode:
+            self.garbage_index = garbage_index
+        # 规范输入图像大小
+        self.image = cv.resize(image, (640, 480))
+        txt0 = "Model-Loading..."
+        msg = {}
+        # 模型预热 # revise
+        if self.garbage_index < 5:
+            self.garbage_index += 1
+            return self.image, msg
+        if self.garbage_index >= 5:
+            # 创建消息容器
+            try:
+                # 获取识别消息
+                msg = self.get_pos()
+            except Exception:
+                print("get_pos NoneType")
+            return self.image, msg
+        return self.image, msg
+    def get_pos(self):
+        """
+        获取识别信息
+        :return: 名称,位置
+        """
+        # 复制原始图像,避免处理过程中干扰
+        img = self.image.copy()
+        pred, names, drawed_res = infer_image(
+            img, self.model, self.labels_dict, self.cfg
+        )
+        self.frame = drawed_res
+        if len(pred) >= 1:
+            cv.putText(
+                self.frame,
+                "Fix Infer Result, Waiting for Robot Arm Finish..",
+                (30, 50),
+                cv.FONT_HERSHEY_SIMPLEX,
+                0.8,
+                (0, 0, 255),
+                2,
+            )
+        data = self.bridge.cv2_to_imgmsg(drawed_res, encoding="bgr8")
+        self.image_pub.publish(data)
+        pred = [pred]
+        msg = {}
+        gn = torch.tensor([640, 480, 640, 480])
+        if pred:
+            # Process detections
+            block_ctr = 0
+            # detections per image
+            for i, det in enumerate(pred):
+                for *xyxy, conf, cls in reversed(det):
+                    prediction_status = True
+                    # normalized xywh
+                    xywh = (
+                        (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn)
+                        .view(-1)
+                        .tolist()
+                    )
+                    label = "%s %.2f" % (names[int(cls)], conf)
+                    # get name
+                    name = names[int(cls)]
+                    name = name + str(block_ctr)
+                    if prediction_status:
+                        point_x = np.int_(xywh[0] * 640)
+                        point_y = np.int_(xywh[1] * 480)
+                        cv.circle(self.image, (point_x, point_y), 5, (0, 0, 255), -1)
+                        # 计算方块在图像中的位置
+                        (a, b) = (
+                            round(((point_x - 320) / 4000), 5),
+                            round(((480 - point_y) / 3000) * 0.8 + 0.19, 5),
+                        )
+                        msg[name] = (a, b)
+                        block_ctr += 1
+        return msg
+“robot_arm_color_stacking/robot_arm_color_stacking/utils/dofbot_config.py”为图像检测与机器视觉逻辑代码：
+    def calibration_map(self, image,xy=None, threshold_num=130):
+        '''
+        放置方块区域检测函数
+        :param image:输入图像
+        :return:轮廓区域边点,处理后的图像
+        '''
+        if xy!=None: 
+            self.xy=xy
+        # 机械臂初始位置角度
+        joints_init = [self.xy[0], self.xy[1], 0, 0, 90, 0] # REVISE
+        # 将机械臂移动到标定方框的状态
+        self.arm.Arm_serial_servo_write6_array(joints_init, 500)
+        self.image = image
+        self.threshold_num = threshold_num
+        # 创建边点容器
+        dp = []
+        h, w = self.image.shape[:2]
+        # print("h",h)
+        # 获取轮廓点集(坐标)
+        contours = self.Morphological_processing()
+        # 遍历点集
+        for i, c in enumerate(contours):
+            # 计算轮廓区域。
+            area = cv.contourArea(c)
+            low_bound = None
+            high_bound = None
+            if self.use_other_cam:
+                low_bound = h * w / 2 - 40000
+            else:
+                low_bound = h * w / 2
+            high_bound = h * w
+            # 设置轮廓区域范围
+            if low_bound < area < high_bound:
+                # 计算多边形的矩
+                mm = cv.moments(c)
+                if mm['m00'] == 0:
+                    continue
+                cx = mm['m10'] / mm['m00']
+                cy = mm['m01'] / mm['m00']
+                # 绘制轮廓区域
+                cv.drawContours(self.image, contours, i, (255, 255, 0), 2)
+                # 获取轮廓区域边点
+                dp = np.squeeze(cv.approxPolyDP(c, 100, True))
+                # 绘制中心
+                if not self.data_collect:
+                    cv.circle(self.image, (np.int_(cx), np.int_(cy)), 5, (0, 0, 255), -1)
+        return dp, self.image
+    def Morphological_processing(self):
+        '''
+        形态学及去噪处理,并获取轮廓点集
+        '''
+        # 将图像转为灰度图
+        gray = cv.cvtColor(self.image, cv.COLOR_BGR2GRAY)
+        # 使用高斯滤镜模糊图像。
+        gray = cv.GaussianBlur(gray, (5, 5), 1)
+        # 图像二值化操作
+        ref, threshold = cv.threshold(gray, self.threshold_num, 255, cv.THRESH_BINARY)
+        # 获取不同形状的结构元素
+        kernel = np.ones((3, 3), np.uint8)
+        # 形态学开操作
+        if self.use_other_cam:
+            blur = cv.morphologyEx(threshold, cv.MORPH_OPEN, kernel, iterations=8)
+        else:
+            blur = cv.morphologyEx(threshold, cv.MORPH_OPEN, kernel, iterations=4)
+        # 提取模式
+        mode = cv.RETR_EXTERNAL
+        # 提取方法
+        method = cv.CHAIN_APPROX_NONE
+        # 获取轮廓点集(坐标) python2和python3在此处略有不同
+        # 层级关系 参数一：输入的二值图，参数二：提取模式，参数三：提取方法。
+        contours, hierarchy = cv.findContours(blur, mode, method)
+        return contours
+    def Perspective_transform(self, dp, image):
+        '''
+        透视变换
+        :param dp: 方框边点(左上,左下,右下,右上)
+        :param image: 原始图像
+        :return: 透视变换后图像
+        '''
+        if len(dp) != 4: 
+            return
+        upper_left = []
+        lower_left = []
+        lower_right = []
+        upper_right = []
+        for i in range(len(dp)):
+            if dp[i][0]<320 and dp[i][1]<240:
+                upper_left=dp[i]
+            if dp[i][0]<320 and dp[i][1]>240:
+                lower_left=dp[i]
+            if dp[i][0]>320 and dp[i][1]>240:
+                lower_right=dp[i]
+            if dp[i][0]>320 and dp[i][1]<240:
+                upper_right=dp[i]
+        # 原图中的四个顶点
+        pts1 = np.float32([upper_left, lower_left, lower_right, upper_right])
+        # 变换后的四个顶点
+        pts2 = np.float32([[0, 0], [0, 480], [640, 480], [640, 0]])
+        # 根据四对对应点计算透视变换。
+        M = cv.getPerspectiveTransform(pts1, pts2)
+        # 将透视变换应用于图像。
+        Transform_img = cv.warpPerspective(image, M, (640, 480))
+        return Transform_img
+“robot_arm_color_stacking/robot_arm_color_stacking/utils/garbage_grap.py”为机械臂抓取与移动堆叠的逻辑代码：
+class stacking_grap:
+    def __init__(self):
+        # 设置移动状态
+        self.move_status = True
+        # 创建机械臂实例
+        self.arm = Arm_Lib.Arm_Device()
+        # 夹爪加紧角度
+        # 超过120夹的过紧会有响声
+        self.grap_joint = 120
+def move(self, joints, joints_down):
+        '''
+        移动过程
+        :param joints: 移动到物体位置的各关节角度
+        :param joints_down: 机械臂堆叠各关节角度
+        '''
+        # 架起角度
+        joints_00 = [90, 80, 50, 50, 265, self.grap_joint]
+        # 抬起
+        joints_up = [135, 80, 50, 50, 265, 30]
+        # 架起
+        self.arm.Arm_serial_servo_write6_array(joints_00, 1000)
+        sleep(1)
+        # 松开夹爪
+        self.arm.Arm_serial_servo_write(6, 0, 800)
+        sleep(0.8)
+        # 移动至物体位置
+        self.arm.Arm_serial_servo_write6_array(joints, 1000)
+        sleep(1)
+        # 夹紧夹爪
+        self.arm.Arm_serial_servo_write(6, self.grap_joint, 800)
+        sleep(0.8)
+        # 架起
+        self.arm.Arm_serial_servo_write6_array(joints_00, 1000)
+        sleep(1)
+        # 移动至对应位置上方
+        self.arm.Arm_serial_servo_write(1, joints_down[0], 1000)
+        sleep(1)
+        # 移动至目标位置
+        self.arm.Arm_serial_servo_write6_array(joints_down, 1000)
+        sleep(1.5)
+        # 松开夹爪
+        self.arm.Arm_serial_servo_write(6, 0, 800)
+        sleep(0.8)
+        # 抬起
+        self.arm.Arm_serial_servo_write6_array(joints_up, 1000)
+        sleep(1)
+    def arm_run(self, move_num, joints):
+        '''
+        机械臂移动函数
+        :param move_num: 抓取次数
+        :param joints: 反解求得的各关节角度
+        '''
+        # a=[132, 50, 20, 60, 265, 100]
+        # b=[132, 55, 38, 38, 265, 100]
+        # c=[132, 60, 45, 30, 265, 100]
+        # d=[132, 65, 55, 20, 265, 100]
+        if move_num == '1' and self.move_status == True:
+            # 此处设置,需执行完本次操作,才能向下运行
+            self.move_status = False  # 将设置机械臂的状态,以保证运行完此过程在执行其它
+            # print(joints[0], joints[1], joints[2], joints[3], joints[4])
+            # 获得目标关节角
+            joints = [joints[0], joints[1], joints[2], joints[3], 265, 30]
+            # 移动到目标前的姿态
+            joints_down = [135, 50, 20, 60, 265, self.grap_joint]
+            # 调用移动函数
+            self.move(joints, joints_down)
+            # 执行完此过程
+            self.move_status = True
+        if move_num == '2' and self.move_status == True:
+            self.move_status = False
+            # print joints[0], joints[1], joints[2], joints[3], joints[4]
+            joints = [joints[0], joints[1], joints[2], joints[3], 265, 30]
+            joints_down = [135, 55, 38, 38, 265, self.grap_joint]
+            self.move(joints, joints_down)
+            self.move_status = True
+        if move_num == '3' and self.move_status == True:
+            self.move_status = False
+            # print joints[0], joints[1], joints[2], joints[3], joints[4]
+            joints = [joints[0], joints[1], joints[2], joints[3], 265, 30]
+            joints_down = [135, 60, 45, 30, 265, self.grap_joint]
+            self.move(joints, joints_down)
+            self.move_status = True
+        if move_num == '4' and self.move_status == True:
+            self.move_status = False
+            # print joints[0], joints[1], joints[2], joints[3], joints[4]
+            joints = [joints[0], joints[1], joints[2], joints[3], 265, 30]
+            joints_down = [135, 65, 55, 20, 265, self.grap_joint]
+            self.move(joints, joints_down)
+            self.move_status = True
+项目下载
+SSH登录root用户
+使用MobaXterm的SSH登录香橙派AIpro开发板，root用户，密码Mind@123。
+禁用开发板的休眠文件
+执行以下命令，禁用开发板环境内预置的休眠文件，防止系统休眠断开ssh登录。
+sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+回显如下：
+Created symlink /etc/systemd/system/sleep.target → /dev/null.
+Created symlink /etc/systemd/system/suspend.target → /dev/null.
+Created symlink /etc/systemd/system/hibernate.target → /dev/null.
+Created symlink /etc/systemd/system/hybrid-sleep.target → /dev/null.
+下载项目代码
+使用git clone将代码仓下载至本地。
+进入下载好的文件夹，将ros2_robot_arm文件夹复制到/root目录下，具体命令如下：
+mkdir -p /root/ros2_project && cd /root/ros2_project
+git clone https://gitee.com/HUAWEI-ASCEND/ascend-devkit.git 
+cp -r ascend-devkit/src/E2E-Sample/ros2_robot_arm /root/
+下载机械臂依赖文件
+robot_arm_dependency.zip 是机械臂项目运行所需的依赖文件集合。
+cd /root/ros2_robot_arm/
+wget https://eduhicomputing.obs.cn-south-1.myhuaweicloud.com/document/robot/robot_arm_dependency.zip
+unzip robot_arm_dependency.zip
+下载模型
+将yolov5s_bs1.om模型放置在两个目录下：
+cd /root/ros2_robot_arm/ros2_ws/src/dofbot_garbage_yolov5/dofbot_garbage_yolov5/model 
+wget https://eduhicomputing.obs.cn-south-1.myhuaweicloud.com/document/robot/yolov5s_bs1.om
+cd /root/ros2_robot_arm/ros2_ws/src/robot_arm_color_stacking/robot_arm_color_stacking/model
+wget https://eduhicomputing.obs.cn-south-1.myhuaweicloud.com/document/robot/yolov5s_bs1.om
+禁用Conda环境
+当项目依赖系统原生Python环境或特定版本的ROS2时（如机械臂控制），禁用Conda（conda deactivate）可避免第三方库版本冲突。
+echo "conda deactivate" >> ~/.bashrc
+source ~/.bashrc  # 重新加载配置文件
+说明：不使用机械臂时，请将“conda deactivate”代码注释。
+环境搭建
+安装ROS2 Humble及核心组件
+安装基础工具链
+apt install -y software-properties-common  
+配置ROS2软件源
+添加ROS2 GPG密钥（本条命令将尝试访问github，如遇卡顿，请多尝试几次）：
+curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+配置ROS2仓库地址：
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+更新并安装核心组件
+sudo apt update
+sudo apt install -y libegl-mesa0  # 安装OpenGL渲染相关的Mesa驱动库
+sudo apt install -y ros-humble-desktop  # 安装ROS2 Humble完整桌面版
+sudo apt install -y python3-colcon-common-extensions  # 安装ROS2编译工具
+sudo apt install -y libopencv-dev libboost-all-dev  # 补充机械臂常见依赖
+sudo apt install ros-humble-joint-state-publisher-gui  # 安装关节状态GUI发布器
+sudo apt install ros-humble-xacro  # 安装Xacro解析工具
+安装ais_bench及依赖
+安装ais_bench工具链
+apt install python3-pip
+pip3 install -v 'git+https://gitee.com/ascend/tools.git#egg=aclruntime&subdirectory=ais-bench_workload/tool/ais_bench/backend' -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip3 install -v 'git+https://gitee.com/ascend/tools.git#egg=ais_bench&subdirectory=ais-bench_workload/tool/ais_bench' -i https://pypi.tuna.tsinghua.edu.cn/simple
+项目依赖安装
+cd /root/ros2_robot_arm
+pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple  # Python依赖
+# 安装arm64架构的二进制包
+sudo dpkg -i libconsole-bridge0.4_0.4.4+dfsg-1build1_arm64.deb 
+sudo dpkg -i liburdfdom-world_1.0.0-2ubuntu0.1_arm64.deb
+​配置系统环境
+动态库路径配置
+echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/lib:/usr/lib/aarch64-linux-gnu:/usr/local/lib" >> ~/.bashrc
+source ~/.bashrc 
+部署硬件驱动
+部署机械臂动力学库：
+sudo cp libdofbot_kinemarics.so /usr/lib  
+​编译扩展组件
+安装orocos_kdl
+cd /root/ros2_robot_arm/orocos_kdl
+mkdir build && cd build
+cmake ..  
+make -j$(nproc)  # 并行编译加速
+sudo make install  # 系统级安装
+安装机械臂驱动
+cd /root/ros2_robot_arm/0.py_install/
+python3 setup.py install  
+添加环境变量
+手动激活ROS2环境变量
+echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+source ~/.bashrc  
+验证ROS2安装状态
+# 查看环境变量路径
+echo $ROS_DISTRO  # 应输出"humble"
+which ros2  # 应显示/opt/ros/humble/bin/ros2
+测试ROS2核心功能
+打开两个终端，终端1执行
+ros2 run demo_nodes_cpp talker  # 终端1
+输出：
+终端2执行
+ros2 run demo_nodes_py listener  # 终端2
+输出：
+连接并启动机械臂
+连接机器臂和开发板
+机械臂和开发板连接原理图：
+香橙派AIpro开发板的40PIN接口引脚顺序：
+开发板和机械臂断电
+在连接开发板和机械臂时，遵循“先断电、后接线、再通电”的流程。先断开开发板和机械臂所有电源，防止短路和电流冲击，避免烧毁电路元件。
+用RJ45网线连接开发板与PC
+用40PIN排线连接开发板和机械臂
+使用机械臂自带的40PIN连接线，将凸起胶粒向外插入香橙派的40PIN接口，如下图：
+排线插入开发板时，对齐散热器的两个螺丝钉，可以保证40针位的正确：
+排线插入机械臂时，将排线的凸起与插座的凹槽对齐后插入：
+插好之后如下图：
+确保机械臂与开发板的排线连接正确，若连接正确，通电时机械臂扩展板的蓝灯会点亮。
+连接USB摄像头
+将USB摄像头插入开发板USB接口（上方的USB接口），如下图：
+将摄像头固定在机械臂上，要确保白色插头向上，如下图：
+开发板和机械臂上电
+将开发板和机械臂分别接入电源，并将机械臂扩展板电源接口旁的开关拨至“ON”。
+因40PIN排线较短，建议尽可能地将开发板与机械臂放置在邻近的位置。避免后续在机械臂展示样例时，排线脱落。
+如果排线比较难插，可以把香橙派AIpro的外壳去掉再插，如下图：
+  
+项目运行
+编译工作空间
+设置环境变量
+setenv.sh包含以下核心配置：
+#  退出conda base环境
+conda deactivate
+# 加载ROS2基础环境
+source /opt/ros/humble/setup.bash
+# 加载当前工作空间环境
+source ./ros2_ws/install/setup.bash
+# 添加动态库路径（若依赖自定义.so文件）
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib:/usr/lib/aarch64-linux-gnu:/usr/local/lib
+执行以下代码配置环境变量：
+cd /root/ros2_robot_arm
+source setenv.sh
+注意：项目未编译时，执行完会出现提示信息：-bash: ./ros2_ws/install/setup.bash: No such file or directory，忽略即可。
+编译工作空间
+cd ros2_ws/
+colcon build
+输出如下：
+校准摄像头（该步骤首次执行，后续可跳过）
+该步骤用于校准目标检测模型（YOLOv5）与机械臂坐标系的映射，从而保证视觉系统对积木空间位置的精准识别。
+具体操作为：在可视化界面中调整摄像头的角度与视野范围，使地图上的十字定位框完整地呈现在摄像头画面中央。通过此操作建立像素坐标系与机械臂运动坐标系的转换关系，为后续抓取任务提供基准参考。
+该校准步骤仅需在首次使用机械臂时完成，后续运行系统时无需重复执行。
+固定地图
+注意地图上有两个小孔，将螺丝插入地图的孔中，对齐机器臂基座最前方的两个小孔：
+固定机械臂和地图，如下图所示，最后记得拧上螺帽：
+启动硬件设备的校准流程
+进入/root/ros2_robot_arm/ros2_ws/src/dofbot_garbage_yolov5/dofbot_garbage_yolov5/utils/目录，将 garbage_identify.py 和 npu_utils.py 中的 CALIB_MODE = False 改为 CALIB_MODE = True，如下图。
+garbage_identify.py改动如下：
+npu_utils.py改动如下：
+打开jupyter notebook
+打开新的终端窗口，执行以下命令进入jupyter notebook：
+jupyter notebook --allow-root --ip 192.168.137.100
+--allow-root为当前开发板的IP，请根据实际IP修改。
+首次进入时可能需要输入登录密码或token：
+若首次登陆未设置密码，可以根据实际回显中的token值登录。回显示例如下，token值为
+红框部分，将红框的token值复制粘贴即可：
+打开相机校准.ipynb
+在Jupyter notebook中逐级点击进入目录 /root/ros2_robot_arm/ros2_ws/src/dofbot_garbage_yolov5/tools，选择“相机校准.ipynb”，进入代码界面：
+随后在在代码界面选择“Kernel”，确保右方的ipykernel为Python3，之后选择“Restart & Run All”运行代码：
+首次启动后，如果拉到最下方没有任何显示（如下图所示），此时回到最上方并点击“Restart & Run All”，多跑几次，直到出现图形界面为止。
+成功运行后，画面如下所示：
+开始校准摄像头
+选择“calibration_model”，点击后，拉动上方的滚动条（“joint1”与“joint2”），随着滚动条的拉动，蓝色边框会出现，请务必确保蓝色边框覆盖整个十字框，具体效果如下（请确保调试环境的光源充足）：
+校准成功后显示
+当效果如上图所示时，点击“calibration_ok”按钮，则可视化界面进入方框内部。具体效果如下图所示：
+停止jupyter notebook程序
+在调整完显示框后，关闭jupyter notebook程序，避免与python主程序发生摄像头冲突。建议使用“Restart”命令进行关闭，如下图所示：
+返回开发板终端，按下键盘“Ctrl”+“C”键，终止jupyter notebook程序。
+关闭硬件设备的校准流程
+进入/root/ros2_robot_arm/ros2_ws/src/dofbot_garbage_yolov5/dofbot_garbage_yolov5/utils/目录，将 garbage_identify.py 和 npu_utils.py 中的 CALIB_MODE = True改为 CALIB_MODE = False。
+重新编译
+cd /root/ros2_robot_arm/
+source setenv.sh
+cd ros2_ws/
+colcon build
+启动机械臂可视化rviz
+启动rviz可视化程序
+source install/setup.bash
+ros2 launch dofbot_moveit dofbot_moveit.launch.py
+跳出窗口：
+（启动积木分拣/堆叠程序后）可添加摄像头实时画面
+选择左下角add：
+选择“By topic”-“Image”：
+左下角出现实时摄像头画面：
+在地图中放置积木，显示如下：
+启动机械臂积木分拣程序
+重新开启2个终端窗口，分别进入对应目录执行命令。
+1号终端输入：
+cd /root/ros2_robot_arm
+source setenv.sh
+ros2 run dofbot_moveit dofbot_server
+2号终端输入：
+cd /root/ros2_robot_arm
+source setenv.sh
+ros2 run dofbot_garbage_yolov5 block_cls
+按“Ctrl+C”键终止程序。
+如果机械臂抓取效果不理想，请看后续步骤，调整机械臂的参数。
+调整机械臂的夹取动作
+若机械臂在夹取积木时，发出“哒哒哒”的巨大噪音，观察一下夹爪夹空时的宽度与积木的宽度，可能是夹爪过紧造成的。如果想要消除噪音，可以调宽夹爪的闭合角度。同时还可以调整机械臂的运动控制参数，使抓取更慢更稳。
+这里根据实际情况，调低了机械臂夹爪的闭合角度（原130→120），同时调慢了机械臂的运动时间（原500→800毫秒）和延时参数（原0.5→0.8秒）。
+修改积木分拣的夹爪动作
+打开/root/ros2_robot_arm/ros2_ws/src/dofbot_garbage_yolov5/dofbot_garbage_yolov5/utils/garbage_grap.py，
+参照下方代码的红色部分，修改实际代码的对应参数：
+class GarbageGrapMove:
+    def __init__(self):
+        # 设置移动状态锁，防止多线程操作冲突
+        self.move_status = True  
+        # 初始化机械臂硬件连接，创建控制实例
+        self.arm = Arm_Lib.Arm_Device()  
+        # 定义夹爪闭合角度（超过120°可能触发硬件过载保护）
+        self.grap_joint = 120  
+    def move(self, joints, joints_down):
+        """
+        完整的抓取-运输-投放流程控制
+        :param joints: 抓取位姿的6轴角度值[基座,大臂,小臂,腕部,夹爪旋转,夹爪开合]
+        :param joints_down: 垃圾桶投放位置的关节参数[基座,大臂,小臂,腕部,夹爪旋转,夹爪开合]
+        """
+        # 预备姿态（基座90°中立位，夹爪闭合状态）
+        joints_uu = [90, 80, 50, 50, 265, self.grap_joint]  
+        # 抬升姿态（基座与投放位置同步，夹爪开启30°）
+        joints_up = [joints_down[0], 80, 50, 50, 265, 30]  
+        # 1. 移动至目标上方（1200ms完成动作，较慢速确保定位精准）
+        self.arm.Arm_serial_servo_write6_array(joints_uu, 1200)  
+        sleep(1.2)  # 等待动作完成
+        # 2. 松开夹爪（第6轴开启到0°，800ms缓慢释放防止惯性晃动）
+        self.arm.Arm_serial_servo_write(6, 0, 800)  
+        sleep(0.5)  # 稳定等待
+        # 3. 下降至抓取位置（800ms快速到位提升效率）
+        self.arm.Arm_serial_servo_write6_array(joints, 800)
+        sleep(0.8)
+        # 4. 夹紧物体（闭合到预设角度，800ms平稳施压）
+        self.arm.Arm_serial_servo_write(6, self.grap_joint, 800)
+        sleep(0.8)
+        # 5. 抬升至安全高度（1000ms中等速度防止晃动）
+        self.arm.Arm_serial_servo_write6_array(joints_uu, 1000)
+        sleep(1)
+        # 6. 调整基座转向垃圾桶（单独控制第1轴，800ms精准转向）
+        self.arm.Arm_serial_servo_write(1, joints_down[0], 800)
+        sleep(0.8)
+        # 7. 下降至投放位置（1000ms缓降确保稳定性）
+        self.arm.Arm_serial_servo_write6_array(joints_down, 1000)
+        sleep(1)
+        # 8. 释放物体（夹爪开启30°，500ms快速释放）
+        self.arm.Arm_serial_servo_write(6, 30, 500)
+        sleep(0.5)
+        # 9. 返回待命位置（1000ms完成抬升动作）
+        self.arm.Arm_serial_servo_write6_array(joints_up, 1000)
+        sleep(1)
+同理，修改积木堆叠的夹爪动作
+打开/root/ros2_robot_arm/ros2_ws/src/robot_arm_color_stacking/robot_arm_color_stacking/utils/stacking_grap.py，
+参照下方代码的红色部分，修改实际代码的对应参数：
+class stacking_grap:
+    def __init__(self):
+        # 设置移动状态锁，防止多线程操作冲突
+        self.move_status = True  
+        # 初始化机械臂硬件连接，创建控制实例
+        self.arm = Arm_Lib.Arm_Device()  
+        # 定义夹爪闭合角度（超过120°可能触发硬件过载保护）
+        self.grap_joint = 120  
+    def move(self, joints, joints_down):
+        """
+        完成物体抓取、抬升、堆叠的完整动作链
+        :param joints: 抓取位姿的6轴角度值[基座,大臂,小臂,腕部,夹爪旋转,夹爪开合]
+        :param joints_down: 堆叠位置的关节参数[基座,大臂,小臂,腕部,夹爪旋转,夹爪开合]
+        """
+        # 预备姿态（基座90°中立位，夹爪闭合状态）
+        joints_00 = [90, 80, 50, 50, 265, self.grap_joint]  
+        # 抬升姿态（基座135°偏移，夹爪开启30°避免碰撞）
+        joints_up = [135, 80, 50, 50, 265, 30]  
+        # 1.进入预备位置（1000ms完成动作，确保初始定位精度）
+        self.arm.Arm_serial_servo_write6_array(joints_00, 1000) 
+        sleep(1)  # 等待动作完成
+        # 2.完全松开夹爪（第6轴开启到0°，800ms快速释放）
+        self.arm.Arm_serial_servo_write(6, 0, 800)  # 关节控制指令
+        sleep(0.8)  # 稳定等待
+        # 3.移动到抓取点位（1000ms中等速度平衡效率）
+        self.arm.Arm_serial_servo_write6_array(joints, 1000)  # 正运动学应用
+        sleep(1)  # 确保到位
+        # 4.执行抓取动作（闭合至预设角度，800ms快速施压）
+        self.arm.Arm_serial_servo_write(6, self.grap_joint, 800)  # 夹爪参数限制
+        sleep(0.8)  # 抓取稳定时间（防滑落）
+        # 5.返回预备高度（1000ms防止负载晃动）
+        self.arm.Arm_serial_servo_write6_array(joints_00, 1000)
+        sleep(1)
+        # 6.调整基座转向堆叠区（单独控制第1轴，1000ms精准定位）
+        self.arm.Arm_serial_servo_write(1, joints_down[0], 1000)  # 笛卡尔空间控制
+        sleep(1)
+        # 7.下降至堆叠位置（1000ms缓降保障稳定性）
+        self.arm.Arm_serial_servo_write6_array(joints_down, 1000)  # 轨迹规划
+        sleep(1.5)  # 延长等待（防倾倒策略）
+        # 8.释放物体
+        self.arm.Arm_serial_servo_write(6, 0, 1000)
+        sleep(1)
+        # 9.返回安全高度（基座135°偏移避开工作区）
+        self.arm.Arm_serial_servo_write6_array(joints_up, 1000)  
+        sleep(1)
+重新编译
+cd /root/ros2_robot_arm/
+source setenv.sh
+cd ros2_ws/
+colcon build
+再次启动5.4积木分拣/堆叠程序查看效果
+跳转至5.4 启动机械臂积木分拣/堆叠程序，再次执行，观察调整后的夹取效果，若噪音问题未解决，可自行调整self.grap_joint参数。
+调整机械臂的补偿量
+经过对比不同机械臂发现，即使是相同商家生产的机械臂，每一款产品在出厂时也存在硬件上的规格差异。针对机械臂因硬件规格差异导致的首次抓取失败问题，需要手工校准机械臂的补偿量，来优化程序控制。
+在机械臂控制中，​补偿量是用于修正机械臂实际运动位置与理论目标位置之间偏差的参数。在offset.txt文件中的两个参数分别对应 ​Y轴（前后方向）​ 和 ​X轴（左右方向）​ 的补偿量。调整这些参数的目的是通过微调机械臂的夹爪位置，使其更精准地抓取积木。
+调整积木堆叠程序的机械臂补偿量
+进入/root/ros2_robot_arm/ros2_ws/src/dofbot_garbage_yolov5/dofbot_garbage_yolov5/config目录，打开offset.txt文件，显示以下两个参数：
+0.016
+0.01
+第一个参数：控制机械臂沿Y轴（前后方向）的补偿量。
+若抓取靠后（色块后方），需增大该值（如从0.008→0.01），使机械臂前伸更远。
+若抓取靠前（色块前方），需减小该值（如0.008→0.006），减少前伸距离。
+​第二个参数：控制X轴（左右方向）补偿量，调整逻辑类似。
+建议重复试验，增量式调整，每次调整以±0.002为步长，直到机械臂能抓取成功。
+这里改为了：
+0.02
+0.016
+同理，调整积木堆叠程序的补偿量
+进入 
+/root/ros2_robot_arm/ros2_ws/src/robot_arm_color_stacking/robot_arm_color_stacking/config目录，打开offset.txt文件，将上述参数复制进来并保存。
+重新编译
+cd /root/ros2_robot_arm/
+source setenv.sh
+cd ros2_ws/
+colcon build
+再次启动5.4积木分拣/堆叠程序查看效果
+跳转至5.4 启动机械臂积木分拣/堆叠程序，再次执行，观察调整后的夹取效果，若夹取问题未解决，可自行调整offset.txt参数。
+启动机械臂积木堆叠程序
+重新开启2个终端窗口，分别进入对应目录执行命令。
+1号终端输入：
+cd /root/ros2_robot_arm
+source setenv.sh
+ros2 run dofbot_moveit dofbot_server
+2号终端输入：
+cd /root/ros2_robot_arm
+source setenv.sh
+ros2 run robot_arm_color_stacking color_stacking
+按“Ctrl+C”键终止程序。
+实验总结
+本实验基于香橙派AIpro，通过硬件组装、环境配置、设备连接、项目编译四步流程，指导学生从零构建机械臂分拣和堆叠系统。实践过程中完成机械臂控制、视觉识别和动作编程，强化理论与实践融合，提升AIoT综合应用能力。
